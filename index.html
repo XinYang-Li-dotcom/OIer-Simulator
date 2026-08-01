@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OIer模拟器 · 开始</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+            padding: 20px;
+            background: var(--bg-primary);
+        }
+        .menu-title {
+            font-size: 3.5em;
+            font-weight: 900;
+            color: var(--text-primary);
+            margin-bottom: 0.2em;
+            letter-spacing: 2px;
+        }
+        .menu-subtitle {
+            font-size: 1.2em;
+            color: var(--text-secondary);
+            margin-bottom: 2em;
+            border-bottom: 2px solid var(--btn-accent);
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            width: 280px;
+            max-width: 90%;
+        }
+        .menu-btn {
+            padding: 16px 24px;
+            font-size: 1.2em;
+            font-weight: 700;
+            border-radius: 12px;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            transition: all 0.2s;
+            cursor: pointer;
+            box-shadow: 0 4px 10px var(--shadow-color);
+        }
+        .menu-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px var(--shadow-heavy);
+            border-color: var(--btn-accent);
+        }
+        .menu-btn.primary {
+            background: var(--btn-accent);
+            color: white;
+            border-color: var(--btn-accent);
+        }
+        .menu-btn.primary:hover {
+            background: var(--btn-accent-hover);
+        }
+        .menu-btn.secondary {
+            background: transparent;
+        }
+        .menu-btn.secondary:hover {
+            background: var(--bg-hover);
+        }
+        .menu-footer {
+            margin-top: 3em;
+            color: var(--text-muted);
+            font-size: 0.85em;
+        }
+        .theme-toggle-menu {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 22px;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 4px 20px var(--shadow-heavy);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-toggle-menu:hover { transform: scale(1.1); }
+        #about-modal .modal-box p { text-align: left; }
+    </style>
+</head>
+<body>
+    <div class="menu-container">
+        <div class="menu-title">🧑‍💻 OIer 模拟器</div>
+        <div class="menu-subtitle">—— 教练，带我们冲 NOI ——</div>
+
+        <div class="menu-buttons">
+            <button class="menu-btn primary" id="btn-new-game">🚀 开始新游戏</button>
+            <button class="menu-btn secondary" id="btn-continue">📂 继续游戏</button>
+            <button class="menu-btn secondary" id="btn-about">ℹ️ 关于</button>
+        </div>
+
+        <div class="menu-footer">
+            V2.0 · 多文件HTML养成 · 开源免费
+        </div>
+    </div>
+
+    <button class="theme-toggle-menu" id="theme-toggle-btn" onclick="toggleTheme()">🌙</button>
+
+    <div id="about-modal" class="overlay hidden">
+        <div class="modal-box" style="max-width:500px;">
+            <h2 class="modal-title">ℹ️ 关于 OIer模拟器</h2>
+            <p style="color:var(--text-secondary); line-height:1.6;">
+                这是一款以信息学竞赛（OI）为背景的教练养成游戏。<br><br>
+                您将带领6名选手，通过训练、模拟赛、心理辅导等手段，提升他们的文化课和竞赛能力，<br>
+                最终在 NOI 2026 中冲击金牌！<br><br>
+                <b>技术栈：</b>纯 HTML + CSS + JavaScript，多文件结构。<br>
+                <b>作者：</b>XinYang-Li-dotcom<br>
+                <b>开源协议：</b>MIT
+            </p>
+            <div style="text-align:center; margin-top:20px;">
+                <button style="padding:10px 30px; background:var(--btn-accent); color:white; border-radius:20px;" onclick="document.getElementById('about-modal').classList.add('hidden')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', next);
+            document.getElementById('theme-toggle-btn').textContent = next === 'dark' ? '☀️' : '🌙';
+            localStorage.setItem('theme', next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+                document.getElementById('theme-toggle-btn').textContent = saved === 'dark' ? '☀️' : '🌙';
+            }
+        })();
+
+        document.getElementById('btn-new-game').addEventListener('click', function() {
+            window.location.href = 'select.html';
+        });
+        document.getElementById('btn-continue').addEventListener('click', function() {
+            const data = localStorage.getItem('oi_players');
+            if (data) {
+                if (confirm('发现存档，是否继续？')) {
+                    window.location.href = 'main.html';
+                }
+            } else {
+                alert('没有找到存档，请开始新游戏。');
+            }
+        });
+        document.getElementById('btn-about').addEventListener('click', function() {
+            document.getElementById('about-modal').classList.remove('hidden');
+        });
+        document.getElementById('about-modal').addEventListener('click', function(e) {
+            if (e.target === this) this.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
