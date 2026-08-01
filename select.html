@@ -12,7 +12,6 @@
             <div class="header-left">
                 <span class="title">🧑‍💻 OIer模拟器</span>
                 <span class="diff-badge">选人阶段</span>
-                <button class="help-btn" onclick="toggleMode()" id="mode-toggle-btn">📚 切换 OI</button>
             </div>
             <div class="stat-group">
                 <span style="font-size:.85em; color:var(--text-muted);">从12人中选出6人</span>
@@ -34,7 +33,7 @@
     <script src="config.js"></script>
     <script src="player.js"></script>
     <script>
-        // ===== 工具函数（直接从原whk.html复制，确保一致） =====
+        // ===== 工具函数 =====
         function getLevel(score, cap) {
             const r = score / cap;
             if (r >= 0.95) return { level: 'SSS', color: '#dc2626' };
@@ -57,31 +56,46 @@
             else eff = 0.3 * Math.exp(-6 * (ratio - 0.85));
             return Math.max(0.02, Math.min(2.0, eff));
         }
-        function getLevelOI(score, cap) {
-            const r = score / cap;
-            if (r >= 0.95) return { level: 'SSS', color: '#dc2626' };
-            if (r >= 0.88) return { level: 'SS', color: '#ea580c' };
-            if (r >= 0.80) return { level: 'S', color: '#9333ea' };
-            if (r >= 0.70) return { level: 'A', color: '#16a34a' };
-            if (r >= 0.55) return { level: 'B', color: '#2563eb' };
-            if (r >= 0.40) return { level: 'C', color: '#64748b' };
-            if (r >= 0.25) return { level: 'D', color: '#94a3b8' };
-            return { level: 'E', color: '#cbd5e1' };
+
+        // 新的 OI 等级评定（0-1000）
+        function getLevelOI(score) {
+            // 边界情况
+            if (score >= 950) return { level: 'SSS', color: '#dc2626' };
+            if (score >= 900) return { level: 'SS+', color: '#ea580c' };
+            if (score >= 800) return { level: 'SS', color: '#9333ea' };
+            if (score >= 700) return { level: 'S', color: '#16a34a' };
+            if (score >= 600) return { level: 'A+', color: '#2563eb' };
+            if (score >= 500) return { level: 'A', color: '#3b82f6' };
+            if (score >= 400) return { level: 'B', color: '#64748b' };
+            if (score >= 300) return { level: 'C', color: '#94a3b8' };
+            if (score >= 200) return { level: 'D', color: '#cbd5e1' };
+            if (score >= 100) return { level: 'E', color: '#9ca3af' };
+            return { level: 'F', color: '#e5e7eb' };
         }
 
         // ===== 选人逻辑 =====
-        let displayMode = 'whk';
         let candidates = [];
         let selected = [];
+        // 每个卡片的显示模式：存储为数组，默认 'whk'
+        let cardModes = [];
 
         function generateCandidates() {
             const names = ['Tourist', 'jiangly', 'Petr', 'Elegia', 'mnbvmar', 'ecnerwala',
                            'Um_nik', 'Benq', 'neal', 'scott_wu', 'apiad', 'Endagorion'];
             candidates = names.map(name => createPlayer(name));
+            // 打乱
             for (let i = candidates.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
             }
+            // 初始化每个卡片的模式为 'whk'
+            cardModes = candidates.map(() => 'whk');
+            renderCandidates();
+        }
+
+        function toggleCardMode(idx) {
+            // 切换该卡片的模式
+            cardModes[idx] = cardModes[idx] === 'whk' ? 'oi' : 'whk';
             renderCandidates();
         }
 
@@ -89,14 +103,17 @@
             const grid = document.getElementById('candidate-grid');
             grid.innerHTML = candidates.map((p, idx) => {
                 const isSelected = selected.includes(idx);
-                // 特质标签：根据类型显示正/负样式
+                const mode = cardModes[idx] || 'whk'; // 默认 whk
+
+                // 特质标签
                 const talentTags = p.talents.map(t => {
                     const cls = t.t === 'pos' ? 'tag-pos' : 'tag-neg';
                     return `<span class="tag ${cls}" title="${t.d}">${t.n}</span>`;
                 }).join('');
 
+                // 根据模式渲染科目
                 let subHtml = '';
-                if (displayMode === 'whk') {
+                if (mode === 'whk') {
                     const subjects = CONFIG.CULTURE_SUBJECTS;
                     const names = CONFIG.CULTURE_NAMES;
                     subHtml = subjects.map(sub => {
@@ -114,7 +131,7 @@
                     const names = CONFIG.OI_NAMES;
                     subHtml = subjects.map(sub => {
                         const val = p.oi[sub];
-                        const lv = getLevelOI(val, 1000);
+                        const lv = getLevelOI(val);
                         return `<div class="sub-box">
                             <div class="sub-label">${names[sub]}</div>
                             <div class="sub-val" style="color:${lv.color};">${lv.level}</div>
@@ -124,8 +141,9 @@
                     }).join('');
                 }
 
+                // 底部信息：WHK显示文理效率，OI显示思维/代码
                 let bottomHtml = '';
-                if (displayMode === 'whk') {
+                if (mode === 'whk') {
                     bottomHtml = `<div class="eff-row">
                         <span>📖 文科 ${Math.round((p.effArts - 0.5) * 100)}%</span>
                         <span>🔬 理科 ${Math.round((p.effSci - 0.5) * 100)}%</span>
@@ -139,13 +157,22 @@
 
                 const naughtyStr = `🎭 ${Math.round(p.naughty * 100)}%`;
 
+                // 右上角切换按钮：显示当前模式，点击切换
+                const modeLabel = mode === 'whk' ? '📚' : '💻';
+                const modeTitle = mode === 'whk' ? '切换 OI' : '切换 WHK';
+
                 return `
                     <div class="stu-card ${isSelected ? 'selected-card' : ''}" 
                          style="cursor:pointer; border:2px solid ${isSelected ? 'var(--btn-success)' : 'var(--border-color)'};"
                          onclick="toggleSelect(${idx})">
                         <div class="stu-header">
                             <span class="stu-name">${p.name} <span style="font-size:.7em;color:var(--text-muted);font-weight:normal;">${naughtyStr}</span></span>
-                            <span class="stu-label">${displayMode === 'whk' ? '文化' : 'OI'}</span>
+                            <span style="display:flex; gap:6px; align-items:center;">
+                                <span class="stu-label" style="font-size:.7em;">${mode === 'whk' ? '文化' : 'OI'}</span>
+                                <button class="btn-mini" style="font-size:.65em; padding:2px 8px;" 
+                                        onclick="event.stopPropagation(); toggleCardMode(${idx});" 
+                                        title="${modeTitle}">${modeLabel}</button>
+                            </span>
                         </div>
                         <div class="tag-pool">${talentTags}</div>
                         <div class="sub-grid">${subHtml}</div>
@@ -167,12 +194,6 @@
                 alert('最多选择6人');
                 return;
             }
-            renderCandidates();
-        }
-
-        function toggleMode() {
-            displayMode = displayMode === 'whk' ? 'oi' : 'whk';
-            document.getElementById('mode-toggle-btn').textContent = displayMode === 'whk' ? '📚 切换 OI' : '💻 切换 WHK';
             renderCandidates();
         }
 
