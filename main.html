@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OIer模拟器 · 主游戏</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-wrapper">
+        <header id="main-header">
+            <div class="header-left">
+                <button class="btn-back" onclick="Game.confirmBackToMenu()">🏠 退出</button>
+                <span class="title">OI集训队</span>
+                <span class="diff-badge normal" id="diff-badge">普通</span>
+                <button class="help-btn" onclick="UI.showHelp()">❓ 帮助</button>
+            </div>
+            <div class="stat-group">
+                <div class="stat-pill">🗓️ <span id="ui-time">2025/09 W1</span></div>
+                <div class="stat-pill">💰 <b id="ui-money">5000</b></div>
+                <div class="stat-pill">⚡ <b id="ui-ap">3</b><span id="ap-max-txt" style="font-size:.7em; color:var(--text-muted)">/3</span></div>
+                <span id="countdown">⏳ 剩余 40 周</span>
+                <button style="background:var(--btn-danger); color:white; padding:5px 16px; border-radius:20px; font-size:.8em;" onclick="Game.nextTurn()" id="btn-next-turn">结束本周</button>
+            </div>
+        </header>
+
+        <div class="app-body" id="main-body">
+            <aside class="sidebar">
+                <div class="nav-tabs">
+                    <button class="tab-btn active" onclick="UI.switchTab('action')">🎯 决策</button>
+                    <button class="tab-btn" onclick="UI.switchTab('fac')">🏗️ 设施</button>
+                </div>
+                <div id="panel-action" class="panel-content active">
+                    <h4 style="margin:0 0 4px 0; color:var(--text-muted); font-size:.7em;">📖 训练模块</h4>
+                    <button class="btn-action" onclick="UI.toggleMenu('menu-study')">
+                        <h5>📚 刷题训练</h5><p>单模块强化</p><span class="cost-tag">AP:1</span>
+                    </button>
+                    <div class="sub-menu" id="menu-study">
+                        <button class="btn-mini" onclick="Game.doAction('study','algo')">算法</button>
+                        <button class="btn-mini" onclick="Game.doAction('study','ds')">数据结构</button>
+                        <button class="btn-mini" onclick="Game.doAction('study','math')">数学</button>
+                        <button class="btn-mini" onclick="Game.doAction('study','eng')">英语</button>
+                        <button class="btn-mini" onclick="Game.doAction('study','code')">代码能力</button>
+                        <button class="btn-mini" onclick="Game.doAction('study','sys')">系统知识</button>
+                    </div>
+                    <button class="btn-action" onclick="UI.toggleMenu('menu-test')">
+                        <h5>⚔️ 模拟赛</h5><p>1.3倍训练效果</p><span class="cost-tag">¥500|AP:1</span>
+                    </button>
+                    <div class="sub-menu" id="menu-test">
+                        <button class="btn-mini" onclick="Game.doAction('test','algo')">算法赛</button>
+                        <button class="btn-mini" onclick="Game.doAction('test','ds')">数据结构赛</button>
+                        <button class="btn-mini" onclick="Game.doAction('test','math')">数学赛</button>
+                    </div>
+                    <button class="btn-action" onclick="Game.doAction('rest','snack')">
+                        <h5>🍢 小吃</h5><p>缓解压力</p><span class="cost-tag">¥400|AP:1</span>
+                    </button>
+                    <button class="btn-action" onclick="Game.doAction('rest','walk')">
+                        <h5>🚶 散步</h5><p>减压</p><span class="cost-tag">AP:1</span>
+                    </button>
+                </div>
+                <div id="panel-fac" class="panel-content">
+                    <div id="fac-container"><p style="color:var(--text-muted);">设施系统开发中...</p></div>
+                </div>
+            </aside>
+
+            <main class="main-view">
+                <div class="view-header">
+                    <h3>🏫 选手档案</h3>
+                    <div>
+                        <button class="chart-toggle-btn" onclick="UI.openChartPage()">📈 查看积分走势</button>
+                    </div>
+                </div>
+                <div id="view-classroom" class="stu-grid"></div>
+            </main>
+
+            <aside class="right-panel">
+                <div class="weather-panel">
+                    <div class="month-tag hidden" id="sprint-tag">冲刺月</div>
+                    <div class="label" id="ui-season">秋季</div>
+                    <div class="emoji" id="ui-weather">☀️</div>
+                    <div class="temp" id="ui-weather-txt">秋高气爽</div>
+                </div>
+                <div class="log-panel" id="log-area"></div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- 图表页面 -->
+    <div id="chart-page" style="display:none; position:fixed; inset:0; background:var(--bg-primary); z-index:999; flex-direction:column; padding:20px 30px;">
+        <div class="chart-header">
+            <h2>📈 选手积分走势</h2>
+            <button class="close-btn" onclick="UI.closeChartPage()">✕ 关闭</button>
+        </div>
+        <div class="chart-body">
+            <div style="color:var(--text-muted); text-align:center; padding-top:50px;">图表开发中...</div>
+        </div>
+    </div>
+
+    <!-- 帮助模态框 -->
+    <div id="help-modal" class="overlay hidden">
+        <div class="modal-box" style="max-width:750px; border-top:6px solid var(--gold-color);">
+            <h2 class="modal-title">❓ 帮助</h2>
+            <div style="padding:10px; background:var(--bg-input); border-radius:6px;">
+                <p>🧑‍💻 带领6名OI选手冲刺NOI 2026。</p>
+                <p>📚 训练提升文化课和OI专项能力，注意压力和心情。</p>
+                <p>🏆 目标：全员金牌！</p>
+            </div>
+            <div style="text-align:center; margin-top:20px;">
+                <button style="padding:10px 30px; background:var(--btn-accent); color:white; border-radius:20px;" onclick="UI.closeModal('help-modal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="player.js"></script>
+    <script src="game.js"></script>
+    <script src="ui.js"></script>
+    <script>
+        window.onload = function() {
+            const data = localStorage.getItem('oi_players');
+            if (!data) {
+                alert('未找到选手数据，请先选人！');
+                window.location.href = 'index.html';
+                return;
+            }
+            try {
+                const players = JSON.parse(data);
+                Game.init(players);
+            } catch (e) {
+                alert('数据错误，请重新选人！');
+                window.location.href = 'index.html';
+            }
+        };
+    </script>
+</body>
+</html>
