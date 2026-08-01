@@ -89,9 +89,11 @@
             const grid = document.getElementById('candidate-grid');
             grid.innerHTML = candidates.map((p, idx) => {
                 const isSelected = selected.includes(idx);
-                const talentTags = p.talents.map(t => 
-                    `<span class="tag tag-pos" title="${t.d}">${t.n}</span>`
-                ).join('');
+                // 特质标签：根据类型显示正/负样式
+                const talentTags = p.talents.map(t => {
+                    const cls = t.t === 'pos' ? 'tag-pos' : 'tag-neg';
+                    return `<span class="tag ${cls}" title="${t.d}">${t.n}</span>`;
+                }).join('');
 
                 let subHtml = '';
                 if (displayMode === 'whk') {
@@ -148,7 +150,6 @@
                         <div class="tag-pool">${talentTags}</div>
                         <div class="sub-grid">${subHtml}</div>
                         ${bottomHtml}
-                        ${isSelected ? '<div style="color:var(--btn-success);font-weight:bold;margin-top:4px;">✅ 已选</div>' : ''}
                     </div>
                 `;
             }).join('');
