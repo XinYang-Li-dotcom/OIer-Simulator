@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OIer模拟器</title>
+    <title>OIer模拟器 · 主游戏</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,6 +14,7 @@
                 <span class="title">OI集训队</span>
                 <span class="diff-badge normal" id="diff-badge">普通</span>
                 <button class="help-btn" onclick="UI.showHelp()">❓ 帮助</button>
+                <button class="help-btn" style="background:var(--btn-accent);" id="mode-toggle-main" onclick="UI.toggleDisplayMode()">📚 切换 OI</button>
             </div>
             <div class="stat-group">
                 <div class="stat-pill">🗓️ <span id="ui-time">2025/09 W1</span></div>
@@ -31,28 +32,12 @@
                     <button class="tab-btn" onclick="UI.switchTab('fac')">🏗️ 设施</button>
                 </div>
                 <div id="panel-action" class="panel-content active">
-                    <h4 style="margin:0 0 4px 0; color:var(--text-muted); font-size:.7em;">📖 训练模块</h4>
-                    <button class="btn-action" onclick="UI.toggleMenu('menu-study')">
-                        <h5>📚 刷题训练</h5><p>单模块强化</p><span class="cost-tag">AP:1</span>
+                    <h4 style="margin:0 0 4px 0; color:var(--text-muted); font-size:.7em;">📖 训练模块（占位）</h4>
+                    <button class="btn-action" onclick="Game.doAction('study','algo')">
+                        <h5>📚 刷题</h5><p>单模块</p><span class="cost-tag">AP:1</span>
                     </button>
-                    <div class="sub-menu" id="menu-study">
-                        <button class="btn-mini" onclick="Game.doAction('study','algo')">算法</button>
-                        <button class="btn-mini" onclick="Game.doAction('study','ds')">数据结构</button>
-                        <button class="btn-mini" onclick="Game.doAction('study','math')">数学</button>
-                        <button class="btn-mini" onclick="Game.doAction('study','eng')">英语</button>
-                        <button class="btn-mini" onclick="Game.doAction('study','code')">代码能力</button>
-                        <button class="btn-mini" onclick="Game.doAction('study','sys')">系统知识</button>
-                    </div>
-                    <button class="btn-action" onclick="UI.toggleMenu('menu-test')">
-                        <h5>⚔️ 模拟赛</h5><p>1.3倍训练效果</p><span class="cost-tag">¥500|AP:1</span>
-                    </button>
-                    <div class="sub-menu" id="menu-test">
-                        <button class="btn-mini" onclick="Game.doAction('test','algo')">算法赛</button>
-                        <button class="btn-mini" onclick="Game.doAction('test','ds')">数据结构赛</button>
-                        <button class="btn-mini" onclick="Game.doAction('test','math')">数学赛</button>
-                    </div>
-                    <button class="btn-action" onclick="Game.doAction('rest','snack')">
-                        <h5>🍢 小吃</h5><p>缓解压力</p><span class="cost-tag">¥400|AP:1</span>
+                    <button class="btn-action" onclick="Game.doAction('test','ds')">
+                        <h5>⚔️ 模拟赛</h5><p>1.3倍</p><span class="cost-tag">¥500|AP:1</span>
                     </button>
                     <button class="btn-action" onclick="Game.doAction('rest','walk')">
                         <h5>🚶 散步</h5><p>减压</p><span class="cost-tag">AP:1</span>
@@ -85,7 +70,7 @@
         </div>
     </div>
 
-    <!-- 图表页面 -->
+    <!-- 图表页面（占位） -->
     <div id="chart-page" style="display:none; position:fixed; inset:0; background:var(--bg-primary); z-index:999; flex-direction:column; padding:20px 30px;">
         <div class="chart-header">
             <h2>📈 选手积分走势</h2>
@@ -116,6 +101,7 @@
     <script src="game.js"></script>
     <script src="ui.js"></script>
     <script>
+        // 主游戏启动
         window.onload = function() {
             const data = localStorage.getItem('oi_players');
             if (!data) {
