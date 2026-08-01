@@ -5,14 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OIer模拟器 · 选人</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        .selected-card { background: var(--tag-pos-bg); border-color: var(--btn-success) !important; }
-        .candidate-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 12px; padding: 10px 0; }
-        .candidate-grid .stu-card { cursor: pointer; transition: transform 0.15s; }
-        .candidate-grid .stu-card:hover { transform: scale(1.02); }
-        .header-actions { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-        .header-actions .count { font-weight: bold; color: var(--btn-accent); }
-    </style>
 </head>
 <body>
     <div id="app-wrapper">
@@ -20,10 +12,11 @@
             <div class="header-left">
                 <span class="title">🧑‍💻 OIer模拟器</span>
                 <span class="diff-badge">选人阶段</span>
+                <button class="help-btn" onclick="toggleMode()" id="mode-toggle-btn">📚 切换 OI</button>
             </div>
-            <div class="stat-group header-actions">
-                <span class="count" id="selected-count">已选 0/6</span>
-                <button id="btn-start-game" class="chart-toggle-btn" style="background:var(--btn-success);" disabled>🚀 开始集训</button>
+            <div class="stat-group">
+                <span style="font-size:.85em; color:var(--text-muted);">从12人中选出6人</span>
+                <span id="selected-count" style="font-weight:bold; color:var(--btn-accent);">已选 0/6</span>
             </div>
         </header>
 
@@ -31,8 +24,9 @@
             <div class="main-view" style="border:none; box-shadow:none; padding:0;">
                 <div class="view-header">
                     <h3>👥 候选选手 (点击选择/取消)</h3>
+                    <button id="btn-start-game" class="chart-toggle-btn" style="background:var(--btn-success);" disabled>🚀 开始集训</button>
                 </div>
-                <div class="candidate-grid" id="candidate-grid"></div>
+                <div class="stu-grid" id="candidate-grid"></div>
             </div>
         </div>
     </div>
@@ -40,6 +34,43 @@
     <script src="config.js"></script>
     <script src="player.js"></script>
     <script>
+        // ===== 工具函数（直接从原whk.html复制，确保一致） =====
+        function getLevel(score, cap) {
+            const r = score / cap;
+            if (r >= 0.95) return { level: 'SSS', color: '#dc2626' };
+            if (r >= 0.88) return { level: 'SS', color: '#ea580c' };
+            if (r >= 0.80) return { level: 'S', color: '#9333ea' };
+            if (r >= 0.70) return { level: 'A', color: '#16a34a' };
+            if (r >= 0.55) return { level: 'B', color: '#2563eb' };
+            if (r >= 0.40) return { level: 'C', color: '#64748b' };
+            if (r >= 0.25) return { level: 'D', color: '#94a3b8' };
+            return { level: 'E', color: '#cbd5e1' };
+        }
+        function getNormalEfficiency(score, cap) {
+            const ratio = score / cap;
+            let eff;
+            if (ratio < 0.25) eff = 2.0 - (ratio / 0.25) * 0.2;
+            else if (ratio < 0.40) eff = 1.8 - ((ratio - 0.25) / 0.15) * 0.3;
+            else if (ratio < 0.55) eff = 1.5 - ((ratio - 0.40) / 0.15) * 0.5;
+            else if (ratio < 0.70) eff = 1.0 - ((ratio - 0.55) / 0.15) * 0.4;
+            else if (ratio < 0.85) eff = 0.6 - ((ratio - 0.70) / 0.15) * 0.3;
+            else eff = 0.3 * Math.exp(-6 * (ratio - 0.85));
+            return Math.max(0.02, Math.min(2.0, eff));
+        }
+        function getLevelOI(score, cap) {
+            const r = score / cap;
+            if (r >= 0.95) return { level: 'SSS', color: '#dc2626' };
+            if (r >= 0.88) return { level: 'SS', color: '#ea580c' };
+            if (r >= 0.80) return { level: 'S', color: '#9333ea' };
+            if (r >= 0.70) return { level: 'A', color: '#16a34a' };
+            if (r >= 0.55) return { level: 'B', color: '#2563eb' };
+            if (r >= 0.40) return { level: 'C', color: '#64748b' };
+            if (r >= 0.25) return { level: 'D', color: '#94a3b8' };
+            return { level: 'E', color: '#cbd5e1' };
+        }
+
+        // ===== 选人逻辑 =====
+        let displayMode = 'whk';
         let candidates = [];
         let selected = [];
 
@@ -47,7 +78,6 @@
             const names = ['Tourist', 'jiangly', 'Petr', 'Elegia', 'mnbvmar', 'ecnerwala',
                            'Um_nik', 'Benq', 'neal', 'scott_wu', 'apiad', 'Endagorion'];
             candidates = names.map(name => createPlayer(name));
-            // 打乱
             for (let i = candidates.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
@@ -59,33 +89,65 @@
             const grid = document.getElementById('candidate-grid');
             grid.innerHTML = candidates.map((p, idx) => {
                 const isSelected = selected.includes(idx);
-                const totalOI = Object.values(p.oi).reduce((a,b)=>a+b,0);
-                const totalCulture = Object.values(p.culture).reduce((a,b)=>a+b,0);
-                const total = totalOI + totalCulture;
+                const talentTags = p.talents.map(t => 
+                    `<span class="tag tag-pos" title="${t.d}">${t.n}</span>`
+                ).join('');
+
+                let subHtml = '';
+                if (displayMode === 'whk') {
+                    const subjects = CONFIG.CULTURE_SUBJECTS;
+                    const names = CONFIG.CULTURE_NAMES;
+                    subHtml = subjects.map(sub => {
+                        const val = p.culture[sub];
+                        const lv = getLevel(val, 150);
+                        return `<div class="sub-box">
+                            <div class="sub-label">${names[sub]}</div>
+                            <div class="sub-val" style="color:${lv.color};">${lv.level}</div>
+                            <div class="sub-estimate">${Math.round(val)}</div>
+                            <div class="sub-eff">${Math.round(getNormalEfficiency(val, 150)*100)}%</div>
+                        </div>`;
+                    }).join('');
+                } else {
+                    const subjects = CONFIG.OI_SUBJECTS;
+                    const names = CONFIG.OI_NAMES;
+                    subHtml = subjects.map(sub => {
+                        const val = p.oi[sub];
+                        const lv = getLevelOI(val, 1000);
+                        return `<div class="sub-box">
+                            <div class="sub-label">${names[sub]}</div>
+                            <div class="sub-val" style="color:${lv.color};">${lv.level}</div>
+                            <div class="sub-estimate">${Math.round(val)}</div>
+                            <div class="sub-eff" style="font-size:.5em;">&nbsp;</div>
+                        </div>`;
+                    }).join('');
+                }
+
+                let bottomHtml = '';
+                if (displayMode === 'whk') {
+                    bottomHtml = `<div class="eff-row">
+                        <span>📖 文科 ${Math.round((p.effArts - 0.5) * 100)}%</span>
+                        <span>🔬 理科 ${Math.round((p.effSci - 0.5) * 100)}%</span>
+                    </div>`;
+                } else {
+                    bottomHtml = `<div class="eff-row">
+                        <span>🧠 思维 ${p.thinking}</span>
+                        <span>💻 代码 ${p.coding}</span>
+                    </div>`;
+                }
+
+                const naughtyStr = `🎭 ${Math.round(p.naughty * 100)}%`;
+
                 return `
-                    <div class="stu-card ${isSelected ? 'selected-card' : ''}" onclick="toggleSelect(${idx})">
+                    <div class="stu-card ${isSelected ? 'selected-card' : ''}" 
+                         style="cursor:pointer; border:2px solid ${isSelected ? 'var(--btn-success)' : 'var(--border-color)'};"
+                         onclick="toggleSelect(${idx})">
                         <div class="stu-header">
-                            <span class="stu-name">${p.name}</span>
-                            <span class="stu-label">综合 ${Math.round(total)}</span>
+                            <span class="stu-name">${p.name} <span style="font-size:.7em;color:var(--text-muted);font-weight:normal;">${naughtyStr}</span></span>
+                            <span class="stu-label">${displayMode === 'whk' ? '文化' : 'OI'}</span>
                         </div>
-                        <div class="tag-pool">
-                            ${p.talents.map(t => `<span class="tag tag-pos" title="${t.d}">${t.n}</span>`).join('')}
-                        </div>
-                        <div style="font-size:.7em; color:var(--text-muted); margin:4px 0;">
-                            <b>文化</b> ${Object.values(p.culture).join('·')}
-                        </div>
-                        <div style="font-size:.7em; color:var(--text-muted); margin:4px 0;">
-                            <b>OI</b> DS${p.oi.ds}·NT${p.oi.nt}·图${p.oi.graph}·串${p.oi.str}·DP${p.oi.dp}
-                        </div>
-                        <div style="font-size:.7em; color:var(--text-muted);">
-                            思维${p.thinking} · 代码${p.coding} · 顽皮${Math.round(p.naughty*100)}%
-                        </div>
-                        <div style="display:flex; gap:10px; margin-top:6px; font-size:.65em;">
-                            <span>❤️ ${Math.round(p.mood)}</span>
-                            <span>😰 ${Math.round(p.stress)}</span>
-                            <span>文效 ${Math.round(p.effArts*100)}%</span>
-                            <span>理效 ${Math.round(p.effSci*100)}%</span>
-                        </div>
+                        <div class="tag-pool">${talentTags}</div>
+                        <div class="sub-grid">${subHtml}</div>
+                        ${bottomHtml}
                         ${isSelected ? '<div style="color:var(--btn-success);font-weight:bold;margin-top:4px;">✅ 已选</div>' : ''}
                     </div>
                 `;
@@ -104,6 +166,12 @@
                 alert('最多选择6人');
                 return;
             }
+            renderCandidates();
+        }
+
+        function toggleMode() {
+            displayMode = displayMode === 'whk' ? 'oi' : 'whk';
+            document.getElementById('mode-toggle-btn').textContent = displayMode === 'whk' ? '📚 切换 OI' : '💻 切换 WHK';
             renderCandidates();
         }
 
