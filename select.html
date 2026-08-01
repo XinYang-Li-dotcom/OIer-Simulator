@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OIer模拟器 · 选人</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .selected-card { background: var(--tag-pos-bg); border-color: var(--btn-success) !important; }
+        .candidate-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 12px; padding: 10px 0; }
+        .candidate-grid .stu-card { cursor: pointer; transition: transform 0.15s; }
+        .candidate-grid .stu-card:hover { transform: scale(1.02); }
+        .header-actions { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .header-actions .count { font-weight: bold; color: var(--btn-accent); }
+    </style>
+</head>
+<body>
+    <div id="app-wrapper">
+        <header>
+            <div class="header-left">
+                <span class="title">🧑‍💻 OIer模拟器</span>
+                <span class="diff-badge">选人阶段</span>
+            </div>
+            <div class="stat-group header-actions">
+                <span class="count" id="selected-count">已选 0/6</span>
+                <button id="btn-start-game" class="chart-toggle-btn" style="background:var(--btn-success);" disabled>🚀 开始集训</button>
+            </div>
+        </header>
+
+        <div class="app-body" style="grid-template-columns:1fr; padding:20px;">
+            <div class="main-view" style="border:none; box-shadow:none; padding:0;">
+                <div class="view-header">
+                    <h3>👥 候选选手 (点击选择/取消)</h3>
+                </div>
+                <div class="candidate-grid" id="candidate-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="player.js"></script>
+    <script>
+        let candidates = [];
+        let selected = [];
+
+        function generateCandidates() {
+            const names = ['Tourist', 'jiangly', 'Petr', 'Elegia', 'mnbvmar', 'ecnerwala',
+                           'Um_nik', 'Benq', 'neal', 'scott_wu', 'apiad', 'Endagorion'];
+            candidates = names.map(name => createPlayer(name));
+            // 打乱
+            for (let i = candidates.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+            }
+            renderCandidates();
+        }
+
+        function renderCandidates() {
+            const grid = document.getElementById('candidate-grid');
+            grid.innerHTML = candidates.map((p, idx) => {
+                const isSelected = selected.includes(idx);
+                const totalOI = Object.values(p.oi).reduce((a,b)=>a+b,0);
+                const totalCulture = Object.values(p.culture).reduce((a,b)=>a+b,0);
+                const total = totalOI + totalCulture;
+                return `
+                    <div class="stu-card ${isSelected ? 'selected-card' : ''}" onclick="toggleSelect(${idx})">
+                        <div class="stu-header">
+                            <span class="stu-name">${p.name}</span>
+                            <span class="stu-label">综合 ${Math.round(total)}</span>
+                        </div>
+                        <div class="tag-pool">
+                            ${p.talents.map(t => `<span class="tag tag-pos" title="${t.d}">${t.n}</span>`).join('')}
+                        </div>
+                        <div style="font-size:.7em; color:var(--text-muted); margin:4px 0;">
+                            <b>文化</b> ${Object.values(p.culture).join('·')}
+                        </div>
+                        <div style="font-size:.7em; color:var(--text-muted); margin:4px 0;">
+                            <b>OI</b> DS${p.oi.ds}·NT${p.oi.nt}·图${p.oi.graph}·串${p.oi.str}·DP${p.oi.dp}
+                        </div>
+                        <div style="font-size:.7em; color:var(--text-muted);">
+                            思维${p.thinking} · 代码${p.coding} · 顽皮${Math.round(p.naughty*100)}%
+                        </div>
+                        <div style="display:flex; gap:10px; margin-top:6px; font-size:.65em;">
+                            <span>❤️ ${Math.round(p.mood)}</span>
+                            <span>😰 ${Math.round(p.stress)}</span>
+                            <span>文效 ${Math.round(p.effArts*100)}%</span>
+                            <span>理效 ${Math.round(p.effSci*100)}%</span>
+                        </div>
+                        ${isSelected ? '<div style="color:var(--btn-success);font-weight:bold;margin-top:4px;">✅ 已选</div>' : ''}
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('selected-count').textContent = `已选 ${selected.length}/6`;
+            document.getElementById('btn-start-game').disabled = selected.length !== 6;
+        }
+
+        function toggleSelect(idx) {
+            const pos = selected.indexOf(idx);
+            if (pos >= 0) {
+                selected.splice(pos, 1);
+            } else if (selected.length < 6) {
+                selected.push(idx);
+            } else {
+                alert('最多选择6人');
+                return;
+            }
+            renderCandidates();
+        }
+
+        document.getElementById('btn-start-game').addEventListener('click', function() {
+            if (selected.length !== 6) return;
+            const chosen = selected.map(idx => candidates[idx]);
+            localStorage.setItem('oi_players', JSON.stringify(chosen));
+            window.location.href = 'main.html';
+        });
+
+        window.onload = generateCandidates;
+    </script>
+</body>
+</html>
